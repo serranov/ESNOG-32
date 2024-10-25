@@ -1,0 +1,127 @@
+name: multivendor
+
+mgmt:
+  network: multivendor
+  ipv4-subnet: 172.50.50.0/24
+
+topology:
+  kinds:
+    srl:
+      image: ghcr.io/nokia/srlinux:24.7.2
+    vr-sros:
+      image: registry.srlinux.dev/pub/vr-sros:24.7.R2
+    ceos:
+      image: registry.srlinux.dev/pub/ceos:4.32.0F
+    vr-vmx:
+      image: registry.srlinux.dev/pub/vr-vmx:21.1R1.11
+    vr-vqfx:
+      image: registry.srlinux.dev/pub/vr-vqfx:19.4R1.10
+    linux:
+      image: ghcr.io/hellt/network-multitool
+
+  nodes:
+    ## SPINES
+    vmx:
+      kind: vr-vmx
+      startup-config: ./config/vmx.cfg
+      group: spine
+      mgmt-ipv4: 172.50.50.32
+    sros:
+      kind: vr-sros
+      startup-config: ./config/sros.cfg
+      group: spine
+      mgmt-ipv4: 172.50.50.31
+      license: ./config/license.txt
+    ## LEAFS
+    srl:
+      kind: srl
+      type: ixrd2l
+      startup-config: ./config/srl.cfg
+      group: leaf
+      mgmt-ipv4: 172.50.50.21
+    ceos:
+      kind: ceos
+      startup-config: ./config/ceos.cfg
+      group: leaf
+      mgmt-ipv4: 172.50.50.22
+    vqfx:
+      kind: vr-vqfx
+      startup-config: ./config/vqfx.cfg
+      group: leaf
+      mgmt-ipv4: 172.50.50.23
+    ## CLIENTS
+    client-1:
+      kind: linux
+      binds:
+        - ./config/eth1.sh:/tmp/eth1.sh
+      exec:
+        - bash /tmp/eth1.sh
+        - ip link set eth1.10 address 00:c1:ab:0:00:01
+        - ip a add 192.168.10.11/24 dev eth1.10
+      group: server   
+      mgmt-ipv4: 172.50.50.11
+    client-2:
+      kind: linux
+      binds:
+        - ./config/eth1.sh:/tmp/eth1.sh
+      exec:
+        - bash /tmp/eth1.sh
+        - ip link set eth1.10 address 00:c1:ab:0:00:02
+        - ip a add 192.168.10.12/24 dev eth1.10
+      group: server
+      mgmt-ipv4: 172.50.50.12
+    client-3:
+      kind: linux
+      binds:
+        - ./config/eth1.sh:/tmp/eth1.sh
+      exec:
+        - bash /tmp/eth1.sh
+        - ip link set eth1.10 address 00:c1:ab:0:00:03
+        - ip a add 192.168.10.13/24 dev eth1.10
+      group: server
+      mgmt-ipv4: 172.50.50.13
+    ## TELEMETRY STACK
+    gnmic:
+      kind: linux
+      image: ghcr.io/openconfig/gnmic:0.38.2
+      binds:
+        - ./config/gnmic/gnmic-config.yml:/gnmic-config.yml:ro
+      cmd: --config /gnmic-config.yml --log subscribe
+      mgmt-ipv4: 172.50.50.41
+    prometheus:
+      kind: linux
+      image: quay.io/prometheus/prometheus:v2.51.2
+      binds:
+        - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      cmd: --config.file=/etc/prometheus/prometheus.yml
+      ports:
+        - 9090:9090
+      mgmt-ipv4: 172.50.50.42
+    grafana:
+      kind: linux
+      image: grafana/grafana:10.4.2
+      binds:
+        - ./config/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+        - ./config/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+        - ./config/grafana/dashboards:/var/lib/grafana/dashboards
+      ports:
+        - 3000:3000
+      env:
+        GF_ORG_ROLE: "Admin"
+        GF_ORG_NAME: "Main Org"
+        GF_AUTH_ANONYMOUS_ENABLED: "true"
+        GF_AUTH_ANONYMOUS: "true"
+      mgmt-ipv4: 172.50.50.43
+
+  links:
+    ## FABRIC
+    - endpoints: ["sros:eth1", "srl:e1-2"]
+    - endpoints: ["sros:eth2", "ceos:eth2"]
+    - endpoints: ["sros:eth3", "vqfx:eth2"]
+    - endpoints: ["vmx:eth1", "srl:e1-3"]
+    - endpoints: ["vmx:eth2", "ceos:eth3"]
+    - endpoints: ["vmx:eth3", "vqfx:eth3"]
+    ## CLIENTS
+    - endpoints: ["client-1:eth1", "srl:e1-1"]
+    - endpoints: ["client-2:eth1", "ceos:eth1"]
+    - endpoints: ["client-3:eth1", "vqfx:eth1"]

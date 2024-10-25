@@ -1,0 +1,276 @@
+# Copyright 2020 Nokia
+# Licensed under the BSD 3-Clause License.
+# SPDX-License-Identifier: BSD-3-Clause
+
+username: admin
+timeout: 10s
+encoding: json_ietf
+
+targets:
+  srl:57400:
+    password: NokiaSrl1!
+    skip-verify: true
+    subscriptions:
+      - srl_ospf_uptime
+      - srl_ospf_neighbors
+      - srl_bgp_stats
+      - srl_cpu
+      - srl_mem
+      - srl_if_traffic_rate
+      - srl_if_oper_state
+      - srl_evpn_imet
+      - srl_evpn_mac_ip
+      - srl_vxlan_if_oper_state
+      - srl_vxlan_stats
+  sros:57400:
+    password: admin
+    insecure: true
+    subscriptions:
+      - sros_ospf_uptime
+      - sros_ospf_neighbors
+      - sros_bgp_peers
+      - sros_bgp_neighbors
+      - sros_cpu
+      - sros_mem
+      - sros_if_stats
+      - sros_if_oper_state
+  ceos:6030:
+    password: admin
+    insecure: true
+    subscriptions:
+      - ceos_bgp_stats
+      - ceos_cpu
+      - ceos_mem
+      - ceos_if_stats
+      - ceos_if_oper_state
+      - ceos_fdb
+  vr-vmx:6030:
+    password: admin@123
+    insecure: true
+    subscriptions:
+      - vmx_interfaces
+      - vmx_cpu
+
+subscriptions:
+  ## SRL
+  srl_ospf_uptime:
+    paths:
+      - /network-instance[name=*]/protocols/ospf/instance[name=*]/area[area-id=*]/interface[interface-name=*]/neighbor[router-id=*]/up-time
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  srl_ospf_neighbors:
+    paths:
+      - /network-instance[name=*]/protocols/ospf/instance[name=*]/area[area-id=*]/interface[interface-name=*]/neighbor-count
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  srl_bgp_stats:
+    paths:
+      - /network-instance[name=*]/protocols/bgp/statistics
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  srl_cpu:
+    paths:
+      - /platform/control[slot=*]/cpu[index=all]/total
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  srl_mem:
+    paths:
+      - /platform/control[slot=*]/memory
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  srl_if_traffic_rate:
+    paths:
+      - /interface[name=ethernet-1/*]/traffic-rate
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  srl_if_oper_state:
+    paths:
+      - /interface[name=ethernet-1/1]/oper-state
+      - /interface[name=ethernet-1/2]/oper-state
+      - /interface[name=ethernet-1/3]/oper-state
+      - /interface[name=mgmt0]/oper-state
+      - /interface[name=system0]/oper-state
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  srl_evpn_imet:
+    paths:
+      - /network-instance[name=*]/bgp-rib/evpn/rib-in-out/rib-in-post/imet-routes[route-distinguisher=*][originating-router=*][ethernet-tag-id=*][neighbor=*]
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  srl_evpn_mac_ip:
+    paths:
+      - /network-instance[name=*]/bgp-rib/evpn/rib-in-out/rib-in-post/mac-ip-routes[route-distinguisher=*][mac-length=*][mac-address=*][ip-address=*][ethernet-tag-id=*][neighbor=*]
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  srl_vxlan_if_oper_state:
+    paths:
+      - /network-instance[name=*]/vxlan-interface[name=*]/oper-state
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  srl_vxlan_stats:
+    paths:
+      - /tunnel-interface[name=*]/vxlan-interface[index=*]/bridge-table/unicast-destinations/destination[vtep=*][vni=*]
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+
+  ## SROS
+  sros_ospf_uptime:
+    paths:
+      - /state/router[router-name=*]/ospf[ospf-instance=*]/area[area-id=*]/interface[interface-name=*]/neighbor-state[router-id=*]/up-time
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  sros_ospf_neighbors:
+    paths:
+      - /state/router[router-name=*]/ospf[ospf-instance=*]/area[area-id=*]/interface[interface-name=*]/neighbor-count
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  sros_bgp_peers:
+    paths:
+      - /state/router[router-name=*]/bgp/statistics/peers
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  sros_bgp_neighbors:
+    paths:
+      - /state/router[router-name=*]/bgp/neighbor[ip-address=*]/statistics/family-prefix/evpn
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  sros_if_stats:
+    paths:
+      - /state/port[port-id=1/1/c1/1]/statistics
+      - /state/port[port-id=1/1/c2/1]/statistics
+      - /state/port[port-id=1/1/c3/1]/statistics
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  sros_if_oper_state:
+    paths:
+      - /state/port[port-id=1/1/c1/1]/oper-state
+      - /state/port[port-id=1/1/c2/1]/oper-state
+      - /state/port[port-id=1/1/c3/1]/oper-state
+      - /state/port[port-id=A/1]/oper-state
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  sros_cpu:
+    paths:
+      - /state/system/cpu[sample-period=300]/system/cpu-usage
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  sros_mem:
+    paths:
+      - /state/system/memory-pools/summary
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+
+  ## cEOS
+  ceos_bgp_stats:
+    paths:
+      - /network-instances/network-instance[name=default]/protocols/protocol[name=BGP]/bgp/neighbors/neighbor[neighbor-address=*]/afi-safis/afi-safi[afi-safi-name=L2VPN_EVPN]
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  ceos_cpu:
+    paths:
+      - eos_native:/Kernel/sysinfo
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  ceos_mem:
+    paths:
+      - /system/memory/state
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  ceos_if_oper_state:
+    paths:
+      - /interfaces/interface[name=*]/state/oper-status
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  ceos_if_stats:
+    paths:
+      - /interfaces/interface[name=*]/state/counters
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+
+  ## vMX
+  vmx_interfaces:
+    paths:
+      - /interfaces/interface[name=*]/state
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+  vmx_cpu:
+    paths:
+      - /junos/system/linecard/cpu
+    mode: stream
+    stream-mode: sample
+    sample-interval: 10s
+
+outputs:
+  prom:
+    type: prometheus
+    listen: :9273
+    path: /metrics
+    metric-prefix: gnmic
+    append-subscription-name: true
+    export-timestamps: true
+    debug: false
+    event-processors:
+      - trim-prefixes
+      - up-down-map
+  # stdout:
+  #   type: file
+  #   file-type: stdout
+  #   event-processors:
+  #     - proc-convert-strings-to-int
+  #     - trim-prefixes
+
+processors:
+  trim-prefixes:
+    event-strings:
+      value-names:
+        - ".*"
+      transforms:
+        - path-base:
+            apply-on: "name"
+  up-down-map:
+    event-strings:
+      value-names:
+        - oper-state
+        - oper-status
+      transforms:
+        - replace:
+            apply-on: "value"
+            old: "up"
+            new: "1"
+        - replace:
+            apply-on: "value"
+            old: "down"
+            new: "0"
+        - replace:
+            apply-on: "value"
+            old: "UP"
+            new: "1"
+        - replace:
+            apply-on: "value"
+            old: "DOWN"
+            new: "0"
